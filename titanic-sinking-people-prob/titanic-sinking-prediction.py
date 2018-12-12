@@ -65,35 +65,57 @@ def encodeCategoricalFeatures(X, X_test):
     X_test = np.delete(X_test, [0, 3, 6], 1)
     
     return(X, X_test)
+    
+def AddPolynomialFeatures(X, X_test, degree):
+    #Create new feature matrix with all possible polynomial features
+    from sklearn.preprocessing import PolynomialFeatures
+    poly = PolynomialFeatures(degree)
+    X = poly.fit_transform(X)
+    X_test = poly.transform(X_test)
+    return (X[:, 1:], X_test[:, 1:])
 
-def fitModel(X_train, y_train):
+def featureScaling(X, X_test):
     #feature scaling
     from sklearn.preprocessing import StandardScaler
     sc_X = StandardScaler()
-    X_train[:, 5:8] = sc_X.fit_transform(X_train[:, 5:8])
-    
+    X[:, 13:16] = sc_X.fit_transform(X[:, 13:16])
+    X_test[:, 13:16] = sc_X.fit_transform(X_test[:, 13:16])
+    return (X, X_test)
+
+def fitModel(X_train, y_train):
+        
     #fit the logistic regression model and then make the predictions
     from sklearn.linear_model import LogisticRegression
-    classifier = LogisticRegression(random_state = 2, solver='liblinear', multi_class='ovr').fit(X_train, y_train);
+    classifier = LogisticRegression(random_state = 2, solver='lbfgs', multi_class='ovr').fit(X_train, y_train);
     return classifier
 
 def splitData(X, y):
     #split the data in training and cross validation sets
     from sklearn.model_selection import train_test_split
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.3, random_state = 0)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.2, random_state = 3)
     return (X_train, X_test, y_train, y_test)
 
 (X, y, ids) = preprocessing('train.csv', 'train')
 (X_test, ids_test) = preprocessing('test.csv', 'test')
 
+#handling categorical data 
 (X, X_test) = encodeCategoricalFeatures(X, X_test)
+#feature scaling
+(X, X_test) = featureScaling(X, X_test)
+#adding polynomial features
+(X, X_test) = AddPolynomialFeatures(X, X_test, 1)
+#split data into training and validation sets
 (X_train, X_val, y_train, y_val) = splitData(X, y)
+
+#get the trained model
 classifier = fitModel(X_train, y_train)
 
 #cross validation
-#accuracy = classifier.score(X_val, y_val)
-#print(accuracy)
+accuracy = classifier.score(X_val, y_val)
+print(accuracy)
 
 #test set result
 y_pred = classifier.predict(X_test)
-
+result = np.hstack((ids_test[:, None], y_pred[:, None]))
+#np.savetxt('result.csv', result, fmt='%10.0f', delimiter=',')
+pd.DataFrame(result, columns = ['PassengerId','Survived']).to_csv('result.csv', index=False)

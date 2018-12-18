@@ -82,12 +82,17 @@ def featureScaling(X, X_test):
     X_test[:, 13:16] = sc_X.fit_transform(X_test[:, 13:16])
     return (X, X_test)
 
-def fitModel(X_train, y_train):
-        
-    #fit the logistic regression model and then make the predictions
+def fitModel(X_train, y_train):      
+    # fit the logistic regression model
     from sklearn.linear_model import LogisticRegression
-    classifier = LogisticRegression(random_state = 2, solver='lbfgs', multi_class='ovr').fit(X_train, y_train);
+    classifier = LogisticRegression(random_state = 2, solver='lbfgs', multi_class='ovr').fit(X_train, y_train)
     return classifier
+
+    # fit model using SVM
+    # from sklearn.svm import SVC
+    # classifier = SVC()
+    # classifier.fit(X_train, y_train)
+    # return classifier
 
 def splitData(X, y):
     #split the data in training and cross validation sets
